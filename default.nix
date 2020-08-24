@@ -9,7 +9,7 @@ let
     sha256 = "1cp5qv4v2vkm447ppa7nv8wkxbn3cnb28r5h7qfdck1mf84wy88v";
   };
   overlay = self: super: {
-    mkExample = path: name: cfg: self.callPackage ({ stdenv, cmake, python }:
+    mkExample = path: name: cfg: self.callPackage ({ stdenv, cmake, python, esptool }:
     stdenv.mkDerivation {
       inherit name cfg;
       passAsFile = [ "cfg" ];
@@ -37,6 +37,15 @@ let
         cp -v *-flash_args $out/
         cp -vr partition_table ${name}.{bin,elf,map} $out
         cp bootloader/bootloader.{elf,bin,map} $out/bootloader/
+        cat <<EOF > $out/flashit
+        #!$shell
+        cd $out
+        ${esptool.__spliced.buildBuild}/bin/esptool.py -p /dev/ttyUSB0 -b 115200 --chip esp32 write_flash \
+          --flash_mode dio --flash_size detect --flash_freq 40m \
+          $(cat app-flash_args | tail -n1) \
+          $(cat bootloader-flash_args | tail -n1) \
+          $(cat partition_table-flash_args | tail -n1)
+        EOF
       '';
     }) {};
     blink = self.mkExample "examples/get-started/blink" "blink" "";
@@ -45,10 +54,11 @@ let
       CONFIG_ESP_WIFI_PASSWORD="hunter2"
     '';
     softAP = self.mkExample "examples/wifi/getting_started/softAP" "wifi_softAP" self.wifi_cfg;
+    helloworld = self.mkExample "examples/get-started/hello_world" "hello-world" "";
   };
 in {
   inherit pkgs;
   esp32 = {
-    inherit (pkgs.pkgsCross.esp32) blink softAP;
+    inherit (pkgs.pkgsCross.esp32) blink softAP helloworld;
   };
 }
