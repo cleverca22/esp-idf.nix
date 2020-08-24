@@ -1,3 +1,5 @@
+{ ssid ? "", password ? "" }:
+
 let
   sources = import ./nix/sources.nix;
   pkgs = import sources.nixpkgs { config = {}; overlays = [ overlay ]; };
@@ -46,18 +48,39 @@ let
           $(cat bootloader-flash_args | tail -n1) \
           $(cat partition_table-flash_args | tail -n1)
         EOF
+        chmod +x $out/flashit
       '';
     }) {};
     blink = self.mkExample "examples/get-started/blink" "blink" "";
     wifi_cfg = ''
-      CONFIG_ESP_WIFI_SSID="fbi surveilance van"
-      CONFIG_ESP_WIFI_PASSWORD="hunter2"
+      CONFIG_ESP_WIFI_SSID="fbi-surveilance-van"
+      CONFIG_ESP_WIFI_PASSWORD="hunter2hunter2"
+      CONFIG_ESP32_XTAL_FREQ=26
+      CONFIG_ESP32_XTAL_FREQ_26=y
+      CONFIG_ESP32_XTAL_FREQ_40=n
+    '';
+    station_cfg = ''
+      CONFIG_ESP_WIFI_SSID="${ssid}"
+      CONFIG_ESP_WIFI_PASSWORD="${password}"
+      CONFIG_ESP32_XTAL_FREQ_26=y
+      CONFIG_ESP32_XTAL_FREQ_40=n
+    '';
+    websocket_cfg = ''
+      CONFIG_WEBSOCKET_URI_FROM_STRING=y
+      CONFIG_WEBSOCKET_URI_FROM_STDIN=n
+      CONFIG_WEBSOCKET_URI="ws://echo.websocket.org"
+      CONFIG_EXAMPLE_WIFI_SSID="${ssid}"
+      CONFIG_EXAMPLE_WIFI_PASSWORD="${password}"
+      CONFIG_ESP32_XTAL_FREQ_26=y
+      CONFIG_ESP32_XTAL_FREQ_40=n
     '';
     softAP = self.mkExample "examples/wifi/getting_started/softAP" "wifi_softAP" self.wifi_cfg;
     helloworld = self.mkExample "examples/get-started/hello_world" "hello-world" "";
+    wifi_station = self.mkExample "examples/wifi/getting_started/station" "wifi_station" self.station_cfg;
+    websocket = self.mkExample "examples/protocols/websocket" "websocket-example" self.websocket_cfg;
   };
 in {
   esp32 = {
-    inherit (pkgs.pkgsCross.esp32) blink softAP helloworld;
+    inherit (pkgs.pkgsCross.esp32) blink softAP websocket wifi_station helloworld;
   };
 }
