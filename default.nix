@@ -57,7 +57,6 @@ let
     helloworld = self.mkExample "examples/get-started/hello_world" "hello-world" "";
   };
 in {
-  inherit pkgs;
   esp32 = {
     inherit (pkgs.pkgsCross.esp32) blink softAP helloworld;
   };
