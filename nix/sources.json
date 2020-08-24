@@ -12,15 +12,15 @@
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nixpkgs": {
-        "branch": "taktoa/esp32",
+        "branch": "taktoa/esp32-experimental",
         "description": "A read-only mirror of NixOS/nixpkgs tracking the released channels. Send issues and PRs to",
         "homepage": "https://github.com/NixOS/nixpkgs",
-        "owner": "taktoa",
+        "owner": "cleverca22",
         "repo": "nixpkgs",
-        "rev": "859e66dd48a",
-        "sha256": "1dxc6cvcjdh9p9dkfywswi3hqdxka8a5zqfq7klcs0ic1hq8nsj5",
+        "rev": "5671c57f215c464fb4938306b024ae8b193fe061",
+        "sha256": "1r4yjgiin4a2868g5y9cz2s97a4zvyjd6b5c4g25pz45mpl1ckdn",
         "type": "tarball",
-        "url": "https://github.com/taktoa/nixpkgs/archive/859e66dd48a.tar.gz",
+        "url": "https://github.com/cleverca22/nixpkgs/archive/5671c57f215c464fb4938306b024ae8b193fe061.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     }
 }

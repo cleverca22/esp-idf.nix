@@ -9,9 +9,10 @@ let
     sha256 = "1cp5qv4v2vkm447ppa7nv8wkxbn3cnb28r5h7qfdck1mf84wy88v";
   };
   overlay = self: super: {
-    mkExample = path: name: self.callPackage ({ stdenv, cmake, python }:
+    mkExample = path: name: cfg: self.callPackage ({ stdenv, cmake, python }:
     stdenv.mkDerivation {
-      inherit name;
+      inherit name cfg;
+      passAsFile = [ "cfg" ];
       src = esp-idf;
       patches = [ ./change.patch ];
       nativeBuildInputs = [
@@ -28,19 +29,26 @@ let
         export IDF_PATH=$(pwd)
         cd ${path}
         echo CONFIG_SDK_TOOLCHAIN_SUPPORTS_TIME_WIDE_64_BITS=y > sdkconfig
+        cat $cfgPath >> sdkconfig
       '';
       hardeningDisable = [ "format" ];
       installPhase = ''
-        mkdir $out
+        mkdir -p $out/bootloader
         cp -v *-flash_args $out/
-        cp -vr bootloader partition_table ${name}.bin $out
+        cp -vr partition_table ${name}.{bin,elf,map} $out
+        cp bootloader/bootloader.{elf,bin,map} $out/bootloader/
       '';
     }) {};
-    blink = self.mkExample "examples/get-started/blink" "blink";
+    blink = self.mkExample "examples/get-started/blink" "blink" "";
+    wifi_cfg = ''
+      CONFIG_ESP_WIFI_SSID="fbi surveilance van"
+      CONFIG_ESP_WIFI_PASSWORD="hunter2"
+    '';
+    softAP = self.mkExample "examples/wifi/getting_started/softAP" "wifi_softAP" self.wifi_cfg;
   };
 in {
   inherit pkgs;
   esp32 = {
-    inherit (pkgs.pkgsCross.esp32) blink;
+    inherit (pkgs.pkgsCross.esp32) blink softAP;
   };
 }
