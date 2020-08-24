@@ -1,0 +1,13 @@
+diff --git a/tools/cmake/build.cmake b/tools/cmake/build.cmake
+index 4e29c8625..afdda1557 100644
+--- a/tools/cmake/build.cmake
++++ b/tools/cmake/build.cmake
+@@ -394,7 +394,7 @@ macro(idf_build_process target)
+     __build_set_default(SDKCONFIG_DEFAULTS "")
+ 
+     # Check for required Python modules
+-    __build_check_python()
++    #__build_check_python()
+ 
+     idf_build_set_property(__COMPONENT_REQUIRES_COMMON ${target} APPEND)
+ 
