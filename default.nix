@@ -3,6 +3,7 @@
 let
   sources = import ./nix/sources.nix;
   pkgs = import sources.nixpkgs { config = {}; overlays = [ overlay ]; };
+  inherit (pkgs) lib;
   esp-idf = pkgs.fetchFromGitHub {
     owner = "espressif";
     repo = "esp-idf";
@@ -10,6 +11,23 @@ let
     fetchSubmodules = true;
     sha256 = "1cp5qv4v2vkm447ppa7nv8wkxbn3cnb28r5h7qfdck1mf84wy88v";
   };
+  libraries = [
+    "app_trace" "app_update" "asio" "bootloader_support" "cbor" "coap" "console" "cxx" "driver"
+    "efuse" "esp32" "esp_adc_cal" "esp_common" "espcoredump" "esp_eth" "esp_event" "esp_gdbstub"
+    "esp_hid" "esp_http_client" "esp_http_server"
+  ];
+  pkgconfigs = {
+    esp_rom = {
+      lflags = "-lesp_rom";
+    };
+  };
+  toPc = name: attrs: ''
+    Name: ${name}
+    Libs: ${attrs.lflags}
+    ${lib.optionalString (attrs ? cflags) "Cflags: ${attrs.cflags}"}
+  '';
+  pcFiles = pkgs.lib.mapAttrs toPc pkgconfigs;
+  generatePcFiles = files: pkgs.lib.concatStringsSep "\n" (pkgs.lib.attrValues (pkgs.lib.mapAttrs (key: file: "cp -v ${builtins.toFile "${key}.pc" file} $out/lib/pkgconfig/${key}.pc") files));
   overlay = self: super: {
     libraries = cfg: self.callPackage ({ stdenv, cmake, findutils, python, esptool }:
     stdenv.mkDerivation {
@@ -199,6 +217,8 @@ let
         for include in $includeDirs; do
             cp -r ../../../../$include/* $out/include/
         done
+        mkdir -pv $out/lib/pkgconfig/
+        ${generatePcFiles pcFiles}
       '';
     }) {};
 
@@ -271,6 +291,7 @@ let
     websocket = self.mkExample "examples/protocols/websocket" "websocket-example" self.websocket_cfg;
   };
 in {
+  inherit pcFiles generatePcFiles pkgs;
   esp32 = {
     libraries = pkgs.pkgsCross.esp32.libraries "";
     inherit (pkgs.pkgsCross.esp32) blink softAP websocket wifi_station helloworld;
