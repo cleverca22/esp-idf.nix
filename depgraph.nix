@@ -13,13 +13,11 @@ let
         "components/app_trace/sys_view/SEGGER"
         "components/app_trace/sys_view/Sample/OS"
       ];
-      priv_include_dirs = [];
       priv_requires = ["soc"];
       requires = [];
     };
     app_update = {
       include_dirs = ["components/app_update/include"];
-      priv_include_dirs = [];
       priv_requires = [];
       requires = ["spi_flash" "partition_table" "bootloader_support"];
     };
@@ -28,79 +26,116 @@ let
         "components/asio/asio/asio/include"
         "components/asio/port/include"
       ];
-      priv_include_dirs = [];
       priv_requires = [];
       requires = ["lwip"];
-      # target_link_libraries
     };
     bootloader = {
       include_dirs = [];
-      priv_include_dirs = [];
       priv_requires = ["partition_table"];
       requires = [];
     };
     bootloader_support = {
-      include_dirs = ["include"];
-      priv_include_dirs = ["include_bootloader"];
+      include_dirs = ["components/bootloader_support/include"];
       priv_requires = ["spi_flash" "mbedtls" "efuse"];
       requires = ["soc"];
     };
-    bt = {
+    bt = if !config.BT_ENABLED then {
       include_dirs = [];
-      priv_include_dirs = [];
+      priv_requires = ["esp_ipc"];
+      requires = ["nvs_flash" "soc" "esp_timer"];
+    } else {
+      include_dirs = [
+        "components/bt/include"
+        "components/bt/common/osi/include"
+      ] ++ lib.optionals config.BT_BLUEDROID_ENABLED [
+        "components/bt/host/bluedroid/api/include/api"
+      ] ++ lib.optionals config.BLE_MESH [
+        "components/bt/esp_ble_mesh/mesh_common/include"
+        "components/bt/esp_ble_mesh/mesh_common/tinycrypt/include"
+        "components/bt/esp_ble_mesh/mesh_core"
+        "components/bt/esp_ble_mesh/mesh_core/include"
+        "components/bt/esp_ble_mesh/mesh_core/storage"
+        "components/bt/esp_ble_mesh/btc/include"
+        "components/bt/esp_ble_mesh/mesh_models/common/include"
+        "components/bt/esp_ble_mesh/mesh_models/client/include"
+        "components/bt/esp_ble_mesh/mesh_models/server/include"
+        "components/bt/esp_ble_mesh/api/core/include"
+        "components/bt/esp_ble_mesh/api/models/include"
+        "components/bt/esp_ble_mesh/api"
+      ] ++ lib.optionals config.BT_NIMBLE_ENABLED [
+        "components/bt/host/nimble/nimble/porting/nimble/include"
+        "components/bt/host/nimble/port/include"
+        "components/bt/host/nimble/nimble/nimble/include"
+        "components/bt/host/nimble/nimble/nimble/host/include"
+        "components/bt/host/nimble/nimble/nimble/host/services/ans/include"
+        "components/bt/host/nimble/nimble/nimble/host/services/bas/include"
+        "components/bt/host/nimble/nimble/nimble/host/services/gap/include"
+        "components/bt/host/nimble/nimble/nimble/host/services/gatt/include"
+        "components/bt/host/nimble/nimble/nimble/host/services/ias/include"
+        "components/bt/host/nimble/nimble/nimble/host/services/ipss/include"
+        "components/bt/host/nimble/nimble/nimble/host/services/lls/include"
+        "components/bt/host/nimble/nimble/nimble/host/services/tps/include"
+        "components/bt/host/nimble/nimble/nimble/host/util/include"
+        "components/bt/host/nimble/nimble/nimble/host/store/ram/include"
+        "components/bt/host/nimble/nimble/nimble/host/store/config/include"
+        "components/bt/host/nimble/nimble/porting/npl/freertos/include"
+        "components/bt/host/nimble/esp-hci/include"
+      ] ++ lib.optionals (config.BT_NIMBLE_ENABLED && !config.BT_NIMBLE_CRYPTO_STACK_MBEDTLS) [
+        "components/bt/host/nimble/nimble/ext/tinycrypt/include"
+      ] ++ lib.optionals (config.BT_NIMBLE_ENABLED && config.BT_NIMBLE_MESH) [
+        "components/bt/host/nimble/nimble/nimble/host/mesh/include"
+      ];
       priv_requires = ["esp_ipc"];
       requires = ["nvs_flash" "soc" "esp_timer"];
     };
     cbor = {
       include_dirs = ["port/include"];
-      priv_include_dirs = ["tinycbor/src"];
       priv_requires = [];
       requires = [];
     };
     coap = {
       include_dirs = [
-        "port/include"
-        "port/include/coap"
-        "libcoap/include"
-        "libcoap/include/coap2"
+        "components/coap/port/include"
+        "components/coap/port/include/coap"
+        "components/coap/libcoap/include"
+        "components/coap/libcoap/include/coap2"
       ];
-      priv_include_dirs = [];
       priv_requires = [];
       requires = ["lwip" "mbedtls"];
     };
     console = {
-      include_dirs = ["."];
-      priv_include_dirs = [];
+      include_dirs = ["components/console"];
       priv_requires = [];
       requires = ["vfs"];
     };
     cxx = {
       include_dirs = [];
-      priv_include_dirs = [];
       priv_requires = ["pthread"];
       requires = [];
     };
     driver = {
-      include_dirs = ["include" "esp32/include"];
-      priv_include_dirs = ["include/driver"];
+      include_dirs = [
+        "components/driver/include"
+        "components/driver/esp32/include"
+      ];
       priv_requires = ["efuse" "esp_timer" "esp_ipc"];
       requires = ["esp_ringbuf" "freertos" "soc"];
     };
     efuse = {
-      include_dirs = ["include" "esp32/include"];
-      priv_include_dirs = ["private_include"];
+      include_dirs = [
+        "components/efuse/include"
+        "components/efuse/esp32/include"
+      ];
       priv_requires = ["bootloader_support" "soc" "spi_flash"];
       requires = [];
     };
     esp-tls = {
-      include_dirs = ["."];
-      priv_include_dirs = ["private_include"];
+      include_dirs = ["components/esp-tls"];
       priv_requires = ["lwip" "nghttp"];
       requires = ["mbedtls"];
     };
     esp32 = {
-      include_dirs = ["include"];
-      priv_include_dirs = [];
+      include_dirs = ["components/esp32/include"];
       priv_requires = [
         "app_trace"
         "app_update"
@@ -121,92 +156,81 @@ let
       requires = ["driver" "efuse" "soc"];
     };
     esp_adc_cal = {
-      include_dirs = ["include"];
-      priv_include_dirs = [];
+      include_dirs = ["components/esp_adc_cal/include"];
       priv_requires = [];
       requires = ["driver" "efuse"];
     };
     esp_common = {
-      include_dirs = ["include"];
-      priv_include_dirs = [];
+      include_dirs = ["components/esp_common/include"];
       priv_requires = ["soc"];
       requires = ["esp32" "espcoredump" "esp_timer" "esp_ipc"];
+      # optional_reqs???
     };
     esp_eth = {
-      include_dirs = ["include"];
-      priv_include_dirs = [];
-      priv_requires = ["driver" "log" "esp_netif"];
+      include_dirs = ["components/esp_eth/include"];
+      priv_requires = ["driver" "log"];
       requires = ["esp_event"];
     };
     esp_event = {
-      include_dirs = ["include"];
-      priv_include_dirs = ["private_include"];
+      include_dirs = ["components/esp_event/include"];
+      # note: esp_eth not needed when IDF_TARGET != "esp32"
       priv_requires = ["esp_eth" "esp_timer"];
       requires = ["log" "esp_netif"];
     };
     esp_gdbstub = {
-      include_dirs = ["include"];
-      priv_include_dirs = ["private_include" "esp32" "xtensa"];
+      include_dirs = ["components/esp_gdbstub/include"];
       priv_requires = ["soc" "xtensa" "esp_rom"];
       requires = ["freertos"];
     };
     esp_hid = {
-      include_dirs = ["include"];
-      priv_include_dirs = ["private"];
+      include_dirs = ["components/esp_hid/include"];
       priv_requires = [];
       requires = ["esp_event" "bt"];
     };
     esp_http_client = {
-      include_dirs = ["include"];
-      priv_include_dirs = ["lib/include"];
+      include_dirs = ["components/esp_http_client/include"];
       priv_requires = ["mbedtls" "lwip" "esp-tls" "tcp_transport"];
       requires = ["nghttp"];
     };
     esp_http_server = {
-      include_dirs = ["include"];
-      priv_include_dirs = ["src/port/esp32" "src/util"];
+      include_dirs = ["components/esp_http_server/include"];
       priv_requires = ["lwip" "mbedtls" "esp_timer"];
       requires = ["nghttp"];
     };
     esp_https_ota = {
-      include_dirs = ["include"];
-      priv_include_dirs = [];
+      include_dirs = ["components/esp_https_ota/include"];
       priv_requires = ["log" "app_update"];
       requires = ["esp_http_client" "bootloader_support"];
     };
     esp_https_server = {
-      include_dirs = [];
-      priv_include_dirs = [];
+      include_dirs = lib.optionals config.ESP_HTTPS_SERVER_ENABLE [
+        "components/esp_https_server/include"
+      ];
       priv_requires = ["lwip"];
       requires = ["esp_http_server" "esp-tls"];
     };
     esp_ipc = {
-      include_dirs = ["include"];
-      priv_include_dirs = [];
+      include_dirs = ["components/esp_ipc/include"];
       priv_requires = [];
       requires = [];
     };
     esp_local_ctrl = {
-      include_dirs = ["include"];
-      priv_include_dirs = ["proto-c" "src" "../protocomm/proto-c"];
+      include_dirs = ["components/esp_local_control/include"];
       priv_requires = ["protobuf-c" "mdns"];
       requires = ["protocomm" "esp_https_server"];
     };
     esp_netif = {
-      include_dirs = ["include"];
-      priv_include_dirs = ["lwip" "private_include"];
+      include_dirs = ["components/esp_netif/include"];
       priv_requires = [];
       requires = ["lwip" "esp_eth" "tcpip_adapter"];
     };
     esp_ringbuf = {
-      include_dirs = ["include"];
-      priv_include_dirs = [];
+      include_dirs = ["components/esp_ringbuf/include"];
       priv_requires = [];
       requires = [];
     };
     esp_rom = {
       include_dirs = ["components/esp_rom/include"];
-      priv_include_dirs = ["esp32"];
       priv_requires = ["soc"];
       requires = [];
       extraLinkFlags = [ "-T" "esp32/ld/esp32.rom.syscalls.ld" ];
@@ -226,7 +250,11 @@ let
         "app_trace"
       ];
       requires = [];
-      extraLinkFlags = [ "-u" "start_app" ] ++ lib.optionals (!config.ESP_SYSTEM_SINGLE_CORE_MODE) [ "-u" "start_app_other_cores" ]
+      extraLinkFlags = [
+        "-u" "start_app"
+      ] ++ lib.optionals (!config.ESP_SYSTEM_SINGLE_CORE_MODE) [
+        "-u" "start_app_other_cores"
+      ]
     };
     esp_timer = {
       include_dirs = ["components/esp_timer/include"];
@@ -239,7 +267,10 @@ let
       requires = ["lwip" "esp-tls" "tcp_transport" "nghttp"];
     };
     esp_wifi = {
-      include_dirs = ["components/esp_wifi/include" "components/esp_wifi/esp32/include"];
+      include_dirs = [
+        "components/esp_wifi/include"
+        "components/esp_wifi/esp32/include"
+      ];
       priv_requires = ["wpa_supplicant" "nvs_flash" "esp_netif"];
       requires = ["esp_event"];
       # todo: linker.lf and CONFIG_ESP32_NO_BLOBS
@@ -256,12 +287,19 @@ let
       requires = ["bootloader"];
     };
     expat = {
-      include_dirs = ["components/expat/expat/expat/lib" "components/expat/port/include"];
+      include_dirs = [
+        "components/expat/expat/expat/lib"
+        "components/expat/port/include"
+      ];
       priv_requires = [];
       requires = [];
     };
     fatfs = {
-      include_dirs = ["components/fatfs/diskio" "components/fatfs/vfs" "components/fatfs/src"];
+      include_dirs = [
+        "components/fatfs/diskio"
+        "components/fatfs/vfs"
+        "components/fatfs/src"
+      ];
       priv_requires = [];
       requires = ["wear_levelling" "sdmmc"];
     };
@@ -271,19 +309,34 @@ let
       requires = ["driver"];
     };
     freertos = {
-      include_dirs = ["components/freertos/include" "components/freertos/xtensa/include"];
+      include_dirs = [
+        "components/freertos/include"
+        "components/freertos/xtensa/include"
+      ];
       priv_requires = ["soc"];
       requires = ["app_trace" "esp_timer"];
     };
     heap = {
       include_dirs = ["components/heap/include"];
-      priv_include_dirs = [];
       priv_requires = ["soc"];
       requires = [];
-      extraLinkFlags = lib.optionals config.HEAP_TRACING (map (f: "-Wl,--wrap=${f}") [ "calloc" "malloc" "free" "realloc" "heap_caps_malloc" "heap_caps_free" "heap_caps_realloc" "heap_caps_malloc_default" "heap_caps_realloc_default");
+      extraLinkFlags = lib.optionals config.HEAP_TRACING (map (f: "-Wl,--wrap=${f}") [
+        "calloc"
+        "malloc"
+        "free"
+        "realloc"
+        "heap_caps_malloc"
+        "heap_caps_free"
+        "heap_caps_realloc"
+        "heap_caps_malloc_default"
+        "heap_caps_realloc_default"
+      ]);
     };
     idf_test = {
-      include_dirs = ["components/idf_test/include" "components/idf_test/include/esp32"];
+      include_dirs = [
+        "components/idf_test/include"
+        "components/idf_test/include/esp32"
+      ];
       priv_requires = [];
       requires = [];
     };
@@ -300,7 +353,10 @@ let
       requires = [];
     };
     libsodium = {
-      include_dirs = ["components/libsodium/libsodium/src/libsodium/include" "components/libsodium/port_include"];
+      include_dirs = [
+        "components/libsodium/libsodium/src/libsodium/include"
+        "components/libsodium/port_include"
+      ];
       priv_requires = [];
       requires = ["mbedtls"];
     };
@@ -321,7 +377,11 @@ let
       requires = ["vfs" "esp_wifi"];
     };
     mbedtls = {
-      include_dirs = ["components/mbedtls/port/include" "components/mbedtls/mbedtls/include" "components/mbedtls/esp_crt_bundle/include"];
+      include_dirs = [
+        "components/mbedtls/port/include"
+        "components/mbedtls/mbedtls/include"
+        "components/mbedtls/esp_crt_bundle/include"
+      ];
       priv_requires = ["soc"];
       requires = ["lwip"];
     };
@@ -332,7 +392,6 @@ let
     };
     mqtt = {
       include_dirs = ["esp-mqtt/include"];
-      priv_include_dirs = ["esp-mqtt/lib/include"];
       priv_requires = [];
       requires = ["lwip" "nghttp" "mbedtls" "tcp_transport"];
     };
@@ -344,7 +403,10 @@ let
       #todo --specs=nano.specs and CONFIG_NEWLIB_NANO_FORMAT
     };
     nghttp = {
-      include_dirs = ["components/nghttp/port/include" "components/nghttp/nghttp2/lib/includes"];
+      include_dirs = [
+        "components/nghttp/port/include"
+        "components/nghttp/nghttp2/lib/includes"
+      ];
       priv_requires = [];
       requires = [];
     };
@@ -374,7 +436,11 @@ let
       requires = [];
     };
     protocomm = {
-      include_dirs = ["components/protocomm/include/common" "components/protocomm/include/security" "components/protocomm/include/transports"];
+      include_dirs = [
+        "components/protocomm/include/common"
+        "components/protocomm/include/security"
+        "components/protocomm/include/transports"
+      ];
       priv_requires = ["protobuf-c" "mbedtls" "console" "esp_http_server"];
       requires = ["bt"];
     };
@@ -382,12 +448,14 @@ let
       include_dirs = ["components/pthread/include"];
       priv_requires = [];
       requires = [];
-      extraLinkFlags = [ "-u" "pthread_include_pthread_impl" ] ++
-        if config.FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP then
-          [ "-Wl,--wrap=vPortCleanUpTCB" ]
-        else
-          [ "-u" "pthread_include_pthread_cond_impl" "-u" "pthread_include_pthread_local_storage_impl" ];
-      ;
+      extraLinkFlags = [
+        "-u" "pthread_include_pthread_impl"
+      ] ++ if config.FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP then [
+        "-Wl,--wrap=vPortCleanUpTCB"
+      ] else [
+        "-u" "pthread_include_pthread_cond_impl"
+        "-u" "pthread_include_pthread_local_storage_impl"
+      ];
     };
     sdmmc = {
       include_dirs = ["components/sdmmc/include"];
@@ -422,7 +490,9 @@ let
     tinyusb = {
       include_dirs = [];
       priv_requires = [];
-      requires = lib.optionals config.USB_ENABLED ["esp_rom" "freertos" "vfs" "soc"];
+      requires = lib.optionals config.USB_ENABLED [
+        "esp_rom" "freertos" "vfs" "soc"
+      ];
     };
     ulp = {
       include_dirs = ["components/ulp/include"];
@@ -450,12 +520,19 @@ let
       requires = ["lwip" "protocomm"];
     };
     wpa_supplicant = {
-      include_dirs = ["components/wpa_supplicant/include" "components/wpa_supplicant/port/include" "components/wpa_supplicant/include/esp_supplicant"];
+      include_dirs = [
+        "components/wpa_supplicant/include"
+        "components/wpa_supplicant/port/include"
+        "components/wpa_supplicant/include/esp_supplicant"
+      ];
       priv_requires = ["mbedtls" "esp_timer"];
       requires = [];
     };
     xtensa = {
-      include_dirs = ["components/extensa/include" "components/xtensa/esp32/include"];
+      include_dirs = [
+        "components/extensa/include"
+        "components/xtensa/esp32/include"
+      ];
       priv_requires = ["soc" "freertos"];
       requires = [];
     };
