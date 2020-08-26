@@ -1,0 +1,22 @@
+diff --git a/tools/cmake/component.cmake b/tools/cmake/component.cmake
+index 4a7396501..d4d84d999 100644
+--- a/tools/cmake/component.cmake
++++ b/tools/cmake/component.cmake
+@@ -442,6 +442,17 @@ function(idf_component_register)
+     __component_get_target(component_target ${COMPONENT_ALIAS})
+     __component_get_property(component_lib ${component_target} COMPONENT_LIB)
+ 
++    file(WRITE "${component_target}.json" "\
++{\n\
++    \"alias\": \"${COMPONENT_ALIAS}\",\n\
++    \"include_dirs\": \"${__INCLUDE_DIRS}\",\n\
++    \"priv_include_dirs\": \"${__PRIV_INCLUDE_DIRS}\",\n\
++    \"requires\": \"${__REQUIRES}\",\n\
++    \"priv_requires\": \"${__PRIV_REQUIRES}\",\n\
++    \"ldfragments\": \"${__LDFRAGMENTS}\",\n\
++}\n\
++")
++
+     # Use generator expression so that users can append/override flags even after call to
+     # idf_build_process
+     idf_build_get_property(include_directories INCLUDE_DIRECTORIES GENERATOR_EXPRESSION)
