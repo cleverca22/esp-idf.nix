@@ -254,7 +254,7 @@ let
         "-u" "start_app"
       ] ++ lib.optionals (!config.ESP_SYSTEM_SINGLE_CORE_MODE) [
         "-u" "start_app_other_cores"
-      ]
+      ];
     };
     esp_timer = {
       include_dirs = ["components/esp_timer/include"];
@@ -450,12 +450,12 @@ let
       requires = [];
       extraLinkFlags = [
         "-u" "pthread_include_pthread_impl"
-      ] ++ if config.FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP then [
+      ] ++ (if config.FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP then [
         "-Wl,--wrap=vPortCleanUpTCB"
       ] else [
         "-u" "pthread_include_pthread_cond_impl"
         "-u" "pthread_include_pthread_local_storage_impl"
-      ];
+      ]);
     };
     sdmmc = {
       include_dirs = ["components/sdmmc/include"];
