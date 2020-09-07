@@ -3,12 +3,13 @@ let
   pkgs = import sources.nixpkgs { config = {}; overlays = []; };
   inherit (pkgs) lib;
 
-  config = {};
+  configuration = import ./sdkconfig.example;
+  config = key: configuration.${key} or false;
   spec = {
     app_trace = {
       include_dirs = [
         "components/app_trace/include"
-      ] ++ lib.optionals config.SYSVIEW_ENABLE [
+      ] ++ lib.optionals (config "SYSVIEW_ENABLE") [
         "components/app_trace/sys_view/Config"
         "components/app_trace/sys_view/SEGGER"
         "components/app_trace/sys_view/Sample/OS"
@@ -19,7 +20,7 @@ let
     app_update = {
       include_dirs = ["components/app_update/include"];
       priv_requires = [];
-      requires = ["spi_flash" "partition_table" "bootloader_support"];
+      requires = ["spi_flash" "bootloader_support"];
     };
     asio = {
       include_dirs = [
@@ -29,17 +30,17 @@ let
       priv_requires = [];
       requires = ["lwip"];
     };
-    bootloader = {
-      include_dirs = [];
-      priv_requires = ["partition_table"];
-      requires = [];
-    };
+    #bootloader = {
+    #  include_dirs = [];
+    #  priv_requires = ["partition_table"];
+    #  requires = [];
+    #};
     bootloader_support = {
       include_dirs = ["components/bootloader_support/include"];
       priv_requires = ["spi_flash" "mbedtls" "efuse"];
       requires = ["soc"];
     };
-    bt = if !config.BT_ENABLED then {
+    bt = if !(config "BT_ENABLED") then {
       include_dirs = [];
       priv_requires = ["esp_ipc"];
       requires = ["nvs_flash" "soc" "esp_timer"];
@@ -47,9 +48,9 @@ let
       include_dirs = [
         "components/bt/include"
         "components/bt/common/osi/include"
-      ] ++ lib.optionals config.BT_BLUEDROID_ENABLED [
+      ] ++ lib.optionals (config "BT_BLUEDROID_ENABLED") [
         "components/bt/host/bluedroid/api/include/api"
-      ] ++ lib.optionals config.BLE_MESH [
+      ] ++ lib.optionals (config "BLE_MESH") [
         "components/bt/esp_ble_mesh/mesh_common/include"
         "components/bt/esp_ble_mesh/mesh_common/tinycrypt/include"
         "components/bt/esp_ble_mesh/mesh_core"
@@ -62,7 +63,7 @@ let
         "components/bt/esp_ble_mesh/api/core/include"
         "components/bt/esp_ble_mesh/api/models/include"
         "components/bt/esp_ble_mesh/api"
-      ] ++ lib.optionals config.BT_NIMBLE_ENABLED [
+      ] ++ lib.optionals (config "BT_NIMBLE_ENABLED") [
         "components/bt/host/nimble/nimble/porting/nimble/include"
         "components/bt/host/nimble/port/include"
         "components/bt/host/nimble/nimble/nimble/include"
@@ -80,9 +81,9 @@ let
         "components/bt/host/nimble/nimble/nimble/host/store/config/include"
         "components/bt/host/nimble/nimble/porting/npl/freertos/include"
         "components/bt/host/nimble/esp-hci/include"
-      ] ++ lib.optionals (config.BT_NIMBLE_ENABLED && !config.BT_NIMBLE_CRYPTO_STACK_MBEDTLS) [
+      ] ++ lib.optionals (config "BT_NIMBLE_ENABLED" && !(config "BT_NIMBLE_CRYPTO_STACK_MBEDTLS")) [
         "components/bt/host/nimble/nimble/ext/tinycrypt/include"
-      ] ++ lib.optionals (config.BT_NIMBLE_ENABLED && config.BT_NIMBLE_MESH) [
+      ] ++ lib.optionals (config "BT_NIMBLE_ENABLED" && config "BT_NIMBLE_MESH") [
         "components/bt/host/nimble/nimble/nimble/host/mesh/include"
       ];
       priv_requires = ["esp_ipc"];
@@ -203,7 +204,7 @@ let
       requires = ["esp_http_client" "bootloader_support"];
     };
     esp_https_server = {
-      include_dirs = lib.optionals config.ESP_HTTPS_SERVER_ENABLE [
+      include_dirs = lib.optionals (config "ESP_HTTPS_SERVER_ENABLE") [
         "components/esp_https_server/include"
       ];
       priv_requires = ["lwip"];
@@ -252,7 +253,7 @@ let
       requires = [];
       extraLinkFlags = [
         "-u" "start_app"
-      ] ++ lib.optionals (!config.ESP_SYSTEM_SINGLE_CORE_MODE) [
+      ] ++ lib.optionals (!(config "ESP_SYSTEM_SINGLE_CORE_MODE")) [
         "-u" "start_app_other_cores"
       ];
     };
@@ -280,11 +281,6 @@ let
       include_dirs = ["components/espcoredump/include"];
       priv_requires = ["spi_flash" "app_update" "mbedtls" "esp_rom" "soc"];
       requires = [];
-    };
-    esptool_py = {
-      include_dirs = [];
-      priv_requires = [];
-      requires = ["bootloader"];
     };
     expat = {
       include_dirs = [
@@ -320,7 +316,7 @@ let
       include_dirs = ["components/heap/include"];
       priv_requires = ["soc"];
       requires = [];
-      extraLinkFlags = lib.optionals config.HEAP_TRACING (map (f: "-Wl,--wrap=${f}") [
+      extraLinkFlags = lib.optionals (config "HEAP_TRACING") (map (f: "-Wl,--wrap=${f}") [
         "calloc"
         "malloc"
         "free"
@@ -332,20 +328,13 @@ let
         "heap_caps_realloc_default"
       ]);
     };
-    idf_test = {
-      include_dirs = [
-        "components/idf_test/include"
-        "components/idf_test/include/esp32"
-      ];
-      priv_requires = [];
-      requires = [];
-    };
     jsmn = {
       include_dirs = ["components/jsmn/include"];
       priv_requires = [];
       requires = [];
-      cflags = lib.optional config.JSMN_PARENT_LINKS "-DJSMN_PARENT_LINKS" ++
-        lib.optional config.JSMN_STRICT "-DJSMN_STRICT";
+      cflags =
+        lib.optional (config "JSMN_PARENT_LINKS") "-DJSMN_PARENT_LINKS" ++
+        lib.optional (config "JSMN_STRICT") "-DJSMN_STRICT";
     };
     json = {
       include_dirs = ["components/json/cJSON"];
@@ -420,11 +409,11 @@ let
       priv_requires = [];
       requires = ["mbedtls"];
     };
-    partition_table = {
-      include_dirs = [];
-      priv_requires = [];
-      requires = [];
-    };
+    #partition_table = {
+    #  include_dirs = [];
+    #  priv_requires = [];
+    #  requires = [];
+    #};
     perfmon = {
       include_dirs = ["components/perfmon/include"];
       priv_requires = [];
@@ -450,7 +439,7 @@ let
       requires = [];
       extraLinkFlags = [
         "-u" "pthread_include_pthread_impl"
-      ] ++ (if config.FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP then [
+      ] ++ (if config "FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP" then [
         "-Wl,--wrap=vPortCleanUpTCB"
       ] else [
         "-u" "pthread_include_pthread_cond_impl"
@@ -487,13 +476,14 @@ let
       priv_requires = [];
       requires = ["esp_netif"];
     };
-    tinyusb = {
-      include_dirs = [];
-      priv_requires = [];
-      requires = lib.optionals config.USB_ENABLED [
-        "esp_rom" "freertos" "vfs" "soc"
-      ];
-    };
+    # # Only used in ESP32S2, which we don't support yet
+    # tinyusb = {
+    #   include_dirs = [];
+    #   priv_requires = [];
+    #   requires = lib.optionals (config "USB_ENABLED") [
+    #     "esp_rom" "freertos" "vfs" "soc"
+    #   ];
+    # };
     ulp = {
       include_dirs = ["components/ulp/include"];
       priv_requires = [];
@@ -530,13 +520,24 @@ let
     };
     xtensa = {
       include_dirs = [
-        "components/extensa/include"
+        "components/xtensa/include"
         "components/xtensa/esp32/include"
       ];
       priv_requires = ["soc" "freertos"];
       requires = [];
     };
   };
+
+  # builtins.toFile "lol" (builtins.toJSON (builtins.genericClosure { startSet = map (n: { key = n; } // spec.${n}) (pkgs.lib.attrNames spec); operator = node: map (n: { key = n; }) node.requires; }))
 in {
-  inherit pkgs lib spec;
+  inherit pkgs lib;
+  spec =
+    let all = lib.attrNames spec;
+        deps = lib.mapAttrs (_: v: v.requires) spec;
+        closureOf = root: map (n: n.key) (lib.genericClosure {
+          startSet = [ { key = root; } ];
+          operator = node: map (k: { key = k; }) deps."${node.key}";
+        });
+    in lib.mapAttrs (k: v: spec.${k} // { trans_requires = v; })
+       (lib.listToAttrs (map (root: { name = root; value = lib.filter (x: x != root) (closureOf root); }) all));
 }
