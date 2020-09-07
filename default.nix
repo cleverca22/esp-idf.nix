@@ -20,10 +20,14 @@ let
   interspace = lib.concatStringsSep " ";
 
   toPc = name: attrs: lib.concatStrings (map (x: x + "\n") (lib.concatLists [
-    ["Name: ${name}"]
+    [
+      "Name: ${name}"
+      "Version: 1.0"
+      "Description: shut up"
+    ]
     (lib.optional (attrs.trans_requires != []) ("Requires: " + interspace attrs.trans_requires))
     (lib.optional (attrs.priv_requires  != []) ("Requires.private: " + interspace attrs.priv_requires))
-    ["Libs: ${interspace (["-l${name}"] ++ (attrs.lflags or []))}"]
+    ["Libs: ${interspace (["-l${name}"] ++ (attrs.extraLinkFlags or []))}"]
     (lib.optional (attrs.include_dirs != []) "Cflags: -I@out@/include")
   ]));
 
@@ -72,9 +76,10 @@ let
         mkdir -pv $out/include
         for include in ${interspace spec.${component}.include_dirs}; do
             if test -n "$(ls ../../../../$include)"; then
-                cp -r ../../../../$include/* $out/include/
+                cp -rv ../../../../$include/* $out/include/
             fi
         done
+        ${lib.concatMapStringsSep "\n" (x: "cp -vi ../../../../${x} $out/lib/$(basename $x)") spec.${component}.ldScripts or []}
       '';
     }) {};
 
@@ -146,13 +151,20 @@ let
     helloworld = self.mkExample "examples/get-started/hello_world" "hello-world" "";
     wifi_station = self.mkExample "examples/wifi/getting_started/station" "wifi_station" self.station_cfg;
     websocket = self.mkExample "examples/protocols/websocket" "websocket-example" self.websocket_cfg;
+    esp32 = lib.makeScope self.newScope (espSelf: (lib.listToAttrs
+                (map (k: { name = k; value = self.mkLibrary k; })
+                (lib.filter (x: spec.${x}.enable or true) (lib.attrNames spec)))
+    ));
   };
 in {
   inherit toPc spec pkgs lib;
   esp32 = {
-    libraries = lib.listToAttrs
-                (map (k: { name = k; value = pkgs.pkgsCross.esp32.mkLibrary k; })
-                 (lib.filter (x: spec.${x}.enable or true) (lib.attrNames spec)));
-    inherit (pkgs.pkgsCross.esp32) blink softAP websocket wifi_station helloworld;
+    inherit (pkgs.pkgsCross.esp32) blink softAP websocket wifi_station helloworld esp32;
+    shell = pkgs.pkgsCross.esp32.esp32.callPackage ({ stdenv, cmake, freertos, esp_common, xtensa, esp_rom, esp_timer, soc, esp32, heap, esp_system, driver, pkgconfig, esp_ringbuf, app_trace, efuse, espcoredump, esp_ipc, bootloader_support, spi_flash, mbedtls, lwip, vfs, esp_wifi, esp_event, log, esp_netif, esp_eth, tcpip_adapter, wpa_supplicant, nvs_flash, app_update, pthread, perfmon, newlib }:
+    stdenv.mkDerivation {
+      name = "shell";
+      nativeBuildInputs = [ cmake pkgconfig ];
+      buildInputs = [ freertos esp_common xtensa esp_rom esp_timer soc esp32 heap esp_system driver esp_ringbuf app_trace efuse espcoredump esp_ipc bootloader_support spi_flash mbedtls lwip vfs  esp_wifi esp_event log esp_netif esp_eth tcpip_adapter wpa_supplicant nvs_flash app_update pthread perfmon newlib ];
+    }) {};
   };
 }

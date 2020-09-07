@@ -155,6 +155,12 @@ let
         "esp_ipc"
       ];
       requires = ["driver" "efuse" "soc"];
+      #cflags "-ffreestanding"
+      extraLinkFlags = [
+        "-nostartfiles"
+        #"-nostdlib"
+        # todo, also include components/esp32/ld/esp32.project.ld.in
+      ];
     };
     esp_adc_cal = {
       include_dirs = ["components/esp_adc_cal/include"];
@@ -234,7 +240,14 @@ let
       include_dirs = ["components/esp_rom/include"];
       priv_requires = ["soc"];
       requires = [];
-      extraLinkFlags = [ "-T" "esp32/ld/esp32.rom.syscalls.ld" ];
+      extraLinkFlags = [
+        "-T" "@out@/lib/esp32.rom.syscalls.ld"
+        "-T" "@out@/lib/esp32.rom.ld"
+      ];
+      ldScripts = [
+        "components/esp_rom/esp32/ld/esp32.rom.syscalls.ld"
+        "components/esp_rom/esp32/ld/esp32.rom.ld"
+      ];
     };
     esp_serial_slave_link = {
       include_dirs = ["components/esp_serial_slave_link/include"];
@@ -250,11 +263,17 @@ let
         "pthread"
         "app_trace"
       ];
-      requires = [];
+      requires = [
+        "esp32"
+        "bootloader_support"
+        "esp_rom"
+        "spi_flash"
+        "soc"
+      ];
       extraLinkFlags = [
-        "-u" "start_app"
+        "-Wl,-u,start_app"
       ] ++ lib.optionals (!(config "ESP_SYSTEM_SINGLE_CORE_MODE")) [
-        "-u" "start_app_other_cores"
+        "-Wl,-u,start_app_other_cores"
       ];
     };
     esp_timer = {
@@ -310,7 +329,7 @@ let
         "components/freertos/xtensa/include"
       ];
       priv_requires = ["soc"];
-      requires = ["app_trace" "esp_timer"];
+      requires = ["app_trace" "esp_timer" "log" "esp_system" "soc" "heap" "newlib" ];
     };
     heap = {
       include_dirs = ["components/heap/include"];
@@ -452,7 +471,12 @@ let
       requires = ["driver"];
     };
     soc = {
-      include_dirs = [];
+      include_dirs = [
+        "components/soc/include"
+        "components/soc/src/esp32/include"
+        "components/soc/soc/esp32/include"
+        "components/soc/soc/include"
+      ];
       priv_requires = ["esp32"];
       requires = [];
     };
